@@ -1,41 +1,41 @@
 # AI News Summarizer
 
-Ringkas artikel berita secara otomatis dari URL menggunakan ekstraksi Readability + Gemini.
+Summarize news articles from a URL using Readability extraction + Gemini.
 
-## Fitur
-- Input URL → otomatis ekstrak artikel → ringkas ke teks polos yang terstruktur.
-- UI modern dengan Tailwind, responsif, indikator proses (spinner + progress bar).
-- Daftar media yang didukung via popup modal.
-- Pembatasan domain: hanya beberapa media tepercaya (whitelist) yang diizinkan.
+## Features
+- Paste URL → auto-extract the article → summarize to clean plain text.
+- Modern, responsive UI with Tailwind, spinner, and a top progress bar while processing.
+- Supported media list shown in an animated modal.
+- Domain whitelist so only trusted news sites are allowed.
 
-## Stack
+## Tech Stack
 - Next.js (App Router)
 - Tailwind CSS v4
 - Gemini 1.5 Flash (Google Generative Language API)
-- Readability (Mozilla) + JSDOM
+- Mozilla Readability + JSDOM
 
-## Persiapan
+## Setup
 1) Install dependencies
 ```bash
 npm install
 ```
 
-2) Siapkan environment variable API Gemini
-- Buat file `.env.local` di folder proyek:
+2) Environment variables
+Create `.env.local` in the project root:
 ```bash
 GOOGLE_API_KEY=YOUR_API_KEY
 ```
 
-3) Jalankan development server
+3) Run the dev server
 ```bash
 npm run dev
 ```
-Aplikasi jalan di `http://localhost:3000`.
+The app runs at `http://localhost:3000`.
 
-## Konfigurasi & Batasan
-- Whitelist domain ada di `src/app/api/extract/route.ts` (array `whitelist`).
-- Beberapa situs (mis. `cnnindonesia.com`) diblokir demi menghindari proteksi anti-bot; endpoint akan memberi pesan ramah.
-- Output diset sebagai teks polos terstruktur: TL;DR, Poin kunci (numerik), 5W1H, Kutipan penting, Potensi bias, Sumber.
+## Configuration & Limits
+- Domain whitelist is in `src/app/api/extract/route.ts` (array `whitelist`).
+- Some sites (e.g., `cnnindonesia.com`) are blocked to avoid anti‑bot issues; the API responds with a friendly message.
+- Output is plain text with structure: TL;DR, Key Points (numbered), 5W1H, Quote, Potential Bias, and Source.
 
 ## Build & Deploy
 ```bash
@@ -43,13 +43,13 @@ npm run build
 npm start
 ```
 
-Deploy ke Vercel disarankan. Pastikan menambahkan `GOOGLE_API_KEY` di Environment Variables proyek.
+Deploying to Vercel is recommended. Add `GOOGLE_API_KEY` in your project environment variables.
 
-## Skrip NPM
-- `dev`  — jalankan dev server
-- `build` — build produksi
-- `start` — server produksi
-- `lint` — jalan linter (opsional)
+## NPM Scripts
+- `dev`  — run dev server
+- `build` — production build
+- `start` — start production server
+- `lint` — run linter (optional)
 
-## Etika Penggunaan
-Gunakan hanya untuk ringkasan/studi pribadi. Hormati hak cipta & robots/policy situs sumber.
+## Usage Ethics
+Use for personal summarization/study only. Respect copyright and each site’s robots/policy.
