@@ -59,17 +59,22 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: `Gemini error: ${errText}` }, { status: 502 });
     }
 
-    const data = await resp.json();
+    const data: {
+      candidates?: Array<{ content?: { parts?: Array<{ text?: string }> } }>;
+    } = await resp.json();
     const textOut =
       data?.candidates?.[0]?.content?.parts?.[0]?.text ??
-      data?.candidates?.[0]?.content?.parts?.map((p: any) => p?.text).join("\n");
+      (data?.candidates?.[0]?.content?.parts
+        ?.map((p) => p?.text || "")
+        .join("\n"));
 
     if (!textOut) {
       return NextResponse.json({ error: "Tidak ada output dari model." }, { status: 502 });
     }
 
     return NextResponse.json({ summary: textOut });
-  } catch (err: any) {
-    return NextResponse.json({ error: err?.message || "Unknown error" }, { status: 500 });
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : "Unknown error";
+    return NextResponse.json({ error: message }, { status: 500 });
   }
 }

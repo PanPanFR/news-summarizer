@@ -60,8 +60,9 @@ export async function POST(req: Request) {
       title: article.title,
       content: article.textContent,
     });
-  } catch (err: any) {
-    console.error("Extract error:", err);
-    return NextResponse.json({ error: err.message }, { status: 500 });
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : "Unknown error";
+    console.error("Extract error:", message);
+    return NextResponse.json({ error: message }, { status: 500 });
   }
 }

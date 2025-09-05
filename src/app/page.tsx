@@ -17,21 +17,7 @@ export default function Home() {
     document.body.classList.remove("dark");
   }, []);
 
-  async function handleExtract() {
-    setErr(null); setOut(null); setLoading(true);
-    try {
-      const r = await fetch("/api/extract", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ url }),
-      });
-      const j = await r.json();
-      if (!r.ok) throw new Error(j.error || "Gagal extract");
-      setText(j.content);
-    } catch (e:any) {
-      setErr(e.message);
-    } finally { setLoading(false); }
-  }
+  // removed unused handleExtract
 
   async function handleSummarize() {
     setErr(null); setOut(null); setLoading(true);
@@ -68,8 +54,9 @@ export default function Home() {
         .replaceAll(/^\s*[-*]\s+/gm, "• ")
         .trim();
       setOut(cleaned);
-    } catch (e:any) {
-      setErr(e.message);
+    } catch (e: unknown) {
+      const message = e instanceof Error ? e.message : "Unknown error";
+      setErr(message);
     } finally { setLoading(false); }
   }
 
