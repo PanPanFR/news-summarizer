@@ -1,36 +1,55 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# AI News Summarizer
 
-## Getting Started
+Ringkas artikel berita secara otomatis dari URL menggunakan ekstraksi Readability + Gemini.
 
-First, run the development server:
+## Fitur
+- Input URL → otomatis ekstrak artikel → ringkas ke teks polos yang terstruktur.
+- UI modern dengan Tailwind, responsif, indikator proses (spinner + progress bar).
+- Daftar media yang didukung via popup modal.
+- Pembatasan domain: hanya beberapa media tepercaya (whitelist) yang diizinkan.
 
+## Stack
+- Next.js (App Router)
+- Tailwind CSS v4
+- Gemini 1.5 Flash (Google Generative Language API)
+- Readability (Mozilla) + JSDOM
+
+## Persiapan
+1) Install dependencies
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+npm install
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+2) Siapkan environment variable API Gemini
+- Buat file `.env.local` di folder proyek:
+```bash
+GOOGLE_API_KEY=YOUR_API_KEY
+```
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+3) Jalankan development server
+```bash
+npm run dev
+```
+Aplikasi jalan di `http://localhost:3000`.
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## Konfigurasi & Batasan
+- Whitelist domain ada di `src/app/api/extract/route.ts` (array `whitelist`).
+- Beberapa situs (mis. `cnnindonesia.com`) diblokir demi menghindari proteksi anti-bot; endpoint akan memberi pesan ramah.
+- Output diset sebagai teks polos terstruktur: TL;DR, Poin kunci (numerik), 5W1H, Kutipan penting, Potensi bias, Sumber.
 
-## Learn More
+## Build & Deploy
+```bash
+npm run build
+npm start
+```
 
-To learn more about Next.js, take a look at the following resources:
+Deploy ke Vercel disarankan. Pastikan menambahkan `GOOGLE_API_KEY` di Environment Variables proyek.
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Skrip NPM
+- `dev`  — jalankan dev server
+- `build` — build produksi
+- `start` — server produksi
+- `lint` — jalan linter (opsional)
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## Etika Penggunaan
+Gunakan hanya untuk ringkasan/studi pribadi. Hormati hak cipta & robots/policy situs sumber.
