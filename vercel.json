@@ -1,0 +1,16 @@
+{
+  "version": 2,
+  "framework": "nextjs",
+  "buildCommand": "npm run build",
+  "installCommand": "npm install",
+  "env": {
+    "GOOGLE_API_KEY": "@google_api_key"
+  },
+  "git": {
+    "deploymentEnabled": {
+      "main": true,
+      "preview": true
+    }
+  }
+}
+
