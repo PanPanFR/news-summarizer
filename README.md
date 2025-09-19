@@ -45,6 +45,9 @@ npm start
 
 Deploying to Vercel is recommended. Add `GOOGLE_API_KEY` in your project environment variables.
 
+### Custom Domain
+The application is accessible via the custom domain: [https://news.panpanfr.my.id/](https://news.panpanfr.my.id/)
+
 ## NPM Scripts
 - `dev`  — run dev server
 - `build` — production build
