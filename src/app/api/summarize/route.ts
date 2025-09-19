@@ -1,5 +1,6 @@
-// app/api/summarize/route.ts
 import { NextResponse } from "next/server";
+import { summarizeRateLimiter, getClientIP } from "@/app/utils/rateLimit";
+import { summarizeCache, generateSummarizeCacheKey } from "@/app/utils/cache";
 
 export const runtime = "nodejs";
 
@@ -9,20 +10,49 @@ type Body = {
   lang?: "id" | "en";
 };
 
-const model = "gemini-1.5-flash"; // cepat & hemat
+const model = "gemini-1.5-flash";
 
 function buildPrompt({ text, url, lang = "id" }: Body) {
   return `
-Anda adalah asisten peringkas berita. Ringkaslah artikel berikut dalam bahasa ${lang === "id" ? "Indonesia" : "Inggris"}.
-Output WAJIB berupa TEKS POLOS (plain text) tanpa format markdown, tanpa tanda bintang, tanpa bullet, tanpa heading markdown (#), tanpa link bertanda [].
-Strukturkan ringkasan secara jelas dengan urutan paragraf berikut:
-1. TL;DR: satu sampai dua kalimat inti.
-2. Poin kunci: tulis sebagai kalimat terpisah per baris, diawali angka 1., 2., 3.
-3. 5W1H: gunakan format "What:", "Who:", "When:", "Where:", "Why:", "How:" masing-masing satu baris.
-4. Kutipan penting: jika ada, tulis sebagai kalimat biasa diapit tanda kutip ganda.
-5. Potensi bias/angle: satu hingga dua kalimat.
-6. Sumber: tulis URL sumber secara polos: ${url ?? "-"}.
-Jaga akurasi, jangan menambah fakta baru. Jika ragu, nyatakan keraguan secara eksplisit.
+Anda adalah asisten peringkas berita profesional. Tugas Anda adalah membuat ringkasan yang akurat, informatif, dan mudah dipahami dari artikel berita yang diberikan. Ringkaslah artikel berikut dalam bahasa ${lang === "id" ? "Indonesia" : "Inggris"}.
+
+PETUNJUK OUTPUT:
+- Output WAJIB berupa TEKS POLOS (plain text) tanpa format markdown, tanpa tanda bintang, tanpa bullet, tanpa heading markdown (#), tanpa link bertanda [].
+- Gunakan struktur yang jelas dan konsisten untuk setiap ringkasan.
+
+STRUKTUR RINGKASAN:
+1. TL;DR: Satu hingga dua kalimat yang menangkap inti berita secara ringkas dan informatif. Fokus pada fakta utama.
+
+2. Poin-poin Utama: 
+   - Tulis 3-5 poin utama dari artikel sebagai kalimat terpisah per baris
+   - Diawali dengan angka 1., 2., 3., dst
+   - Setiap poin harus menyampaikan informasi penting dari artikel
+
+3. 5W1H (Jika relevan):
+   - What: Apa yang terjadi?
+   - Who: Siapa yang terlibat?
+   - When: Kapan kejadian terjadi?
+   - Where: Di mana kejadian terjadi?
+   - Why: Mengapa hal ini terjadi?
+   - How: Bagaimana kejadian ini terjadi?
+   (Catatan: Jika beberapa elemen 5W1H tidak relevan atau tidak disebutkan dalam artikel, lewati saja bagian tersebut)
+
+4. Kutipan Penting (Jika ada):
+   - Sertakan satu atau dua kutipan langsung yang paling penting atau representatif dari artikel
+   - Tulis sebagai kalimat biasa diapit tanda kutip ganda
+
+5. Konteks/Perspektif:
+   - Satu hingga dua kalimat yang memberikan konteks tambahan atau menjelaskan sudut pandang dari berita tersebut
+   - Bisa mencakup latar belakang isu, implikasi, atau relevansi dengan isu yang lebih luas
+
+6. Sumber: ${url ?? "-"}
+
+PENTING:
+- Jaga akurasi dan hanya sampaikan informasi yang ada dalam artikel
+- Jangan menambahkan fakta, opini, atau informasi yang tidak ada dalam artikel
+- Jika informasi untuk suatu bagian tidak tersedia, lewati bagian tersebut
+- Jika ragu tentang suatu informasi, nyatakan keraguan secara eksplisit
+- Gunakan bahasa yang jelas, objektif, dan mudah dipahami
 
 === ARTIKEL MULAI ===
 ${text}
@@ -33,7 +63,24 @@ ${text}
 export async function POST(req: Request) {
   try {
     const body = await req.json() as Body;
+
     if (!body?.text) return NextResponse.json({ error: "text wajib diisi" }, { status: 400 });
+
+    const cacheKey = generateSummarizeCacheKey(body.text, body.lang || "id");
+    const cachedResult = summarizeCache.get(cacheKey);
+    if (cachedResult) {
+      return NextResponse.json(cachedResult);
+    }
+
+    const ip = getClientIP(req);
+    if (summarizeRateLimiter.isRateLimited(ip)) {
+      const resetTime = summarizeRateLimiter.getResetTime(ip);
+      const secondsLeft = Math.ceil((resetTime - Date.now()) / 1000);
+      return NextResponse.json(
+        { error: `Rate limit exceeded. Coba lagi dalam ${secondsLeft} detik.` }, 
+        { status: 429 }
+      );
+    }
 
     const prompt = buildPrompt(body);
 
@@ -48,7 +95,6 @@ export async function POST(req: Request) {
             temperature: 0.2,
           },
           safetySettings: [
-            // biarkan default aman
           ],
         }),
       }
@@ -72,7 +118,10 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Tidak ada output dari model." }, { status: 502 });
     }
 
-    return NextResponse.json({ summary: textOut });
+    const result = { summary: textOut };
+    summarizeCache.set(cacheKey, result);
+    
+    return NextResponse.json(result);
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : "Unknown error";
     return NextResponse.json({ error: message }, { status: 500 });
